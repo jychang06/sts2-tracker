@@ -4,8 +4,6 @@ Parse Slay the Spire 2 `.run` files into a SQLite database and analyze player
 choices (card/relic/potion pick rates with Wilson confidence intervals, HP curves).
 
 **Status:** early. The game is in early access and the run format may change.
-Currently supports `schema_version` 8 (build v0.98.3). Other versions are skipped
-with a logged message.
 
 ## Install
 
