@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sts2-tracker"
+version = "0.1.0"
+description = "Parse Slay the Spire 2 run files and analyze player choices"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["pandas"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+sts2 = "sts2_tracker.cli:main"
+
+[tool.setuptools]
+packages = ["sts2_tracker"]
