@@ -19,8 +19,9 @@ def _run():
                     {"card": {"id": "CARD.BACKFLIP"}, "was_picked": True},
                     {"card": {"id": "CARD.DEFLECT"}, "was_picked": False}])]},
             {"map_point_type": "shop", "rooms": [{"room_type": "shop"}], "player_stats": [dict(
-                stats, card_choices=[{"card": {"id": "CARD.PANACHE"}, "was_picked": False}],
-                cards_gained=[{"id": "CARD.PANACHE"}], bought_colorless=["CARD.PANACHE"])]},
+                stats, card_choices=[{"card": {"id": "CARD.GOLD_AXE"}, "was_picked": False}],
+                cards_gained=[{"id": "CARD.PANACHE"}],
+                cards_removed=[{"id": "CARD.STRIKE_SILENT"}])]},
         ]],
     }
 
@@ -33,7 +34,9 @@ def test_parse_choices(tmp_path):
     card = [c for c in r.choices if c.kind == "card"][0]
     assert card.offered == ["CARD.BACKFLIP", "CARD.DEFLECT"] and card.picked == ["CARD.BACKFLIP"]
     shop = [c for c in r.choices if c.kind == "shop_card"][0]
-    assert shop.picked == ["CARD.PANACHE"]  # detected once, not double-counted
+    # shop card_choices holds only unbought stock; purchases come from cards_gained
+    assert shop.offered == ["CARD.GOLD_AXE", "CARD.PANACHE"] and shop.picked == ["CARD.PANACHE"]
+    assert [(d["action"], d["card"]) for d in r.deck_changes] == [("remove", "CARD.STRIKE_SILENT")]
 
 
 def test_scan_is_idempotent_and_skips_bad_files(tmp_path):
@@ -42,3 +45,28 @@ def test_scan_is_idempotent_and_skips_bad_files(tmp_path):
     con = connect(":memory:")
     assert scan_folder(con, tmp_path, log=lambda m: None) == (1, 0, 1)
     assert scan_folder(con, tmp_path, log=lambda m: None) == (0, 1, 1)
+
+
+def test_newer_schema_parses_with_warning(tmp_path, caplog):
+    d = _run()
+    d["schema_version"] = 99
+    d["is_custom_game"] = True
+    d["players"][0]["badges"] = [{"id": "ELITE", "rarity": "bronze"}]
+    d["map_point_history"][0][0]["player_stats"][0]["brand_new_key"] = 1
+    p = tmp_path / "n.run"
+    p.write_text(json.dumps(d))
+    r = parse_run(p)
+    assert r.is_custom and r.badges == ["ELITE"]
+    assert "newer than verified" in caplog.text and "brand_new_key" in caplog.text
+
+
+def test_too_old_schema_rejected(tmp_path):
+    d = _run()
+    d["schema_version"] = 3
+    p = tmp_path / "o.run"
+    p.write_text(json.dumps(d))
+    try:
+        parse_run(p)
+        assert False, "should have raised"
+    except ValueError:
+        pass

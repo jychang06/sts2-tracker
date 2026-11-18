@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 from .analysis import hp_curve, pick_rates
 from .db import connect, scan_folder
@@ -11,6 +12,7 @@ def main():
     s = sub.add_parser("scan"); s.add_argument("folder")
     r = sub.add_parser("report"); r.add_argument("--kind", default="card"); r.add_argument("--character")
     a = ap.parse_args()
+    logging.basicConfig(level=logging.WARNING, format="%(message)s")
     con = connect(a.db)
     if a.cmd == "scan":
         print("new=%d duplicate=%d failed=%d" % scan_folder(con, a.folder))

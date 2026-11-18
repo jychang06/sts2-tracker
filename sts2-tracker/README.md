@@ -4,6 +4,10 @@ Parse Slay the Spire 2 `.run` files into a SQLite database and analyze player
 choices (card/relic/potion pick rates with Wilson confidence intervals, HP curves).
 
 **Status:** early. The game is in early access and the run format may change.
+Verified against `schema_version` 8 (build v0.98.3) and 11 (build v0.113.1). Older
+versions are skipped with a logged message. Newer versions parse best-effort and log a
+warning, plus a warning for any unrecognized per-floor key, so format drift is visible
+rather than silent.
 
 ## Install
 
@@ -49,8 +53,11 @@ Re-scanning is safe: runs are deduplicated by start time + seed.
 
 ## Notes
 
-- Shop purchases are derived from `bought_*` / `cards_gained` because the game
-  marks every shop offer as not picked.
+- Shops: the game marks every shop card as not picked, and `card_choices` lists only the
+  *unbought* stock. Purchased cards come from `cards_gained` (inferred from 10 purchases
+  across 2 runs, none of which appeared in the offered list). The full shop stock is
+  reconstructed as remaining + bought.
+- Card removals, transforms, upgrades and downgrades are stored in `deck_changes`.
 - Rest-site offers are not recorded in the file; Heal/Smith is assumed.
 - Naive win-rate-by-pick is confounded by player skill; control for character,
   ascension and build before drawing conclusions.
